@@ -7,12 +7,20 @@ r = requests.get('https://www.amazon.in/')
 
 soup = BeautifulSoup(r.text, 'html.parser')
 
-image_parent = soup.find("div", class_="a-row a-carousel-controls a-carousel-row a-carousel-has-buttons a-carousel-overlay-buttons a-carousel-rounded-buttons").find("div", class_="a-carousel-row-inner").find_all("div", class_="a-carousel-col")
+card_body = soup.find("div", id="pageContent")
 
-image = image_parent[1].find("div", class_="a-carousel-viewport").find("ol", class_="a-carousel").find_all("li")
+card = card_body.find_all("div", id="gw-layout")
 
-for i in image:
-    image = i.find("div", class_="gw-ftGr-desktop-hero").find("img")
-    print(image.get("src"))
+cards = card[0].find_all("div", class_="gw-card-layout")
+
+
+for index, item in enumerate(cards, start=1):
+    first_div = card_body.find("div", id=f"desktop-grid-{index}")
+    title = first_div.find("div", class_="a-cardui-header").find("h2").text
+    link = first_div.find("div", class_="a-cardui-footer").find("a")
+    image_parent = first_div.find("div", class_="_fluid-quad-image-label-v2_style_fluidQuadImageLabelBody__3tld0")
+    print(image_parent)
+
+
 
 
