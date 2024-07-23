@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 # Making a GET request
 r = requests.get('https://www.geeksforgeeks.org/python-web-scraping-tutorial/')
 
+
 # print content of request
 soup = BeautifulSoup(r.text, 'html.parser')
 article_title = soup.find("div", class_ ="text")
