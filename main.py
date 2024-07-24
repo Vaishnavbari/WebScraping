@@ -2,6 +2,38 @@ from bs4 import BeautifulSoup
 import requests
 import csv
 
+base_url = "https://www.amazon.com/"
+
+custom_headers = {
+        'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'accept-language': 'en-GB,en-US;q=0.9,en;q=0.8'
+    }
+
+def inner_url_scraping(inner_url):
+
+    url =f"{base_url}{inner_url}"
+
+    page =  requests.get(url=url)
+
+    if page.status_code != 200:
+        print("Failed to retrieve the webpage.")
+
+    soup = BeautifulSoup(page.text, 'html.parser')
+
+    image_div = soup.find("div", id="altImages")
+    if not image_div:
+        return None
+
+    all_image = image_div.find_all("img")
+
+    if not image_div:
+        return None
+    
+    for image in all_image:
+        if not image:
+            continue
+        image_url = image.get("src") if image else "Not available"
+
 
 def web_scraping():
     custom_headers = {
@@ -30,6 +62,12 @@ def web_scraping():
 
         product_name = data.find("span", class_="a-text-normal")
         product_name = product_name.text if product_name else "Not available "
+
+        product_description_link = data.find("a", class_="a-link-normal")
+        if product_description_link:
+           inner_url =product_description_link.get("href")
+           inner_url_scraping(inner_url)
+           
 
         product_reviews_section = data.find("div", attrs={"data-cy":"reviews-block"})
         if product_reviews_section:
@@ -60,7 +98,7 @@ def web_scraping():
 
     print(f"Data for keyword '{user_keyword}' has been saved to {user_keyword}.csv")
 
-    web_scraping() # call the function again
+    # web_scraping() # call the function again
     
 web_scraping() # call the function 
 
