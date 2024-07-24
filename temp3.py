@@ -1,57 +1,56 @@
 from bs4 import BeautifulSoup
 import requests
 import csv
-from urllib.parse import urljoin
+import os
 
+base_url = "https://www.amazon.com/"
 
 def web_scraping():
+    custom_headers = {
+        'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'accept-language': 'en-GB,en-US;q=0.9,en;q=0.8'
+    }
+
+    user_keyword = input("Enter your keyword: ").strip()
+
+    page_number = 1
+
+    product_list = [["id", "product_name", "product_review", "review_count", "product_image", "price"]]
+
     while True:
-        custom_headers = {
-            'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-            'accept-language': 'en-GB,en-US;q=0.9,en;q=0.8'
-        }
+        url = f"{base_url}s?k={user_keyword}&page={page_number}&crid=9C9WDWWLV3GT&sprefix=mackbook%2Caps%2C276&ref=nb_sb_noss_2"
 
-        user_keyword = input("Enter your keyword: ").strip()
-        url = f"https://www.amazon.com/s?k={user_keyword}&crid=9C9WDWWLV3GT&sprefix=mackbook%2Caps%2C276&ref=nb_sb_noss_2"
-        # url = f"https://www.amazon.in/s?k={user_keyword}&crid=NGBCD9UE98FQ&qid=1721796965&sprefix=%2Caps%2C172&ref=sr_pg_1"
+        print("Scraping URL:", url)
 
-        print(url)
-
-       
         response = requests.get(url=url, headers=custom_headers)
         if response.status_code != 200:
             print("Failed to retrieve the webpage.")
-            exit()
+            break
 
         soup = BeautifulSoup(response.text, "html.parser")
+
         results = soup.find_all("div", attrs={"cel_widget_id": lambda x: x and "MAIN-SEARCH_RESULTS-" in x})
 
-        page_number = soup.select_one('span', class_="s-pagination-strip")
-        print(page_number)
-
-
-        product_list = [["id", "product_name", "product_review", "review_count", "product_image", "price"]]
-
-        for index, data in enumerate(results, start=1):
+        for index, data in enumerate(results, start=len(product_list)):
             if not data:
                 continue
 
             product_name = data.find("span", class_="a-text-normal")
-            product_name = product_name.text if product_name else "Not available "
+            product_name = product_name.text if product_name else "Not available"
 
             product_reviews_section = data.find("div", attrs={"data-cy":"reviews-block"})
             if product_reviews_section:
                 product_review = product_reviews_section.find("i")
-                product_review = product_review.span.text if product_review else "Not available "
+                product_review = product_review.span.text if product_review else "Not available"
                 
                 review_count = product_reviews_section.find("span", class_="s-underline-text")
                 review_count = review_count.text if review_count else "Not available"
             else:
-                product_review = "Not available "
-                review_count = "Not available "
+                product_review = "Not available"
+                review_count = "Not available"
 
             product_image = data.find("img")
-            product_image = product_image.get("src") if product_image else "Not available "
+            product_image = product_image.get("src") if product_image else "Not available"
 
             price_recipe = data.find("div", attrs={"data-cy":"price-recipe"})
             if price_recipe:
@@ -62,22 +61,22 @@ def web_scraping():
 
             product_list.append([index, product_name, product_review, review_count, product_image, price])
 
+        # Save data to CSV
+        if not os.path.exists('csv'):
+            os.makedirs('csv')
+
         with open(f'csv/{user_keyword}.csv', 'w', newline='') as file:
             writer = csv.writer(file, delimiter='|')
             writer.writerows(product_list)
 
-        print(f"Data for keyword '{user_keyword}' has been saved to {user_keyword}.csv")
+        print(f"Data for keyword '{user_keyword}' has been saved to csv/{user_keyword}.csv")
 
-        next_page_element = soup.select_one('li.next > a')
-
-        next_page_url = next_page_element.get('href')
-
-        if next_page_url :
+        # Check for next page
+        next_page_element = soup.find('a', class_="s-pagination-next")
+        if not next_page_element or 's-pagination-disabled' in next_page_element.get('class', []):
             break
 
-        url = urljoin(url, next_page_url)
+        page_number += 1
+        print(f"Scraped Page {page_number}")
 
-        web_scraping() # call the function again
-    
-web_scraping() # call the function 
-
+web_scraping()  # Call the function
