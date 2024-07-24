@@ -11,7 +11,7 @@ custom_headers = {
     }
 
 
-def inner_url_scraping(inner_url, index):
+def inner_url_scraping(inner_url):
 
     url =f"{base_url}{inner_url}"
     
@@ -82,7 +82,10 @@ def web_scraping():
             product_description_link = data.find("a", class_="a-link-normal")
             if product_description_link:
                 inner_url = product_description_link.get("href")
-                image_list = inner_url_scraping(inner_url, index)  # return image list 
+
+                image_list = inner_url_scraping(inner_url) # return image list 
+                if not image_list:
+                    image_list = "Not available"
            
            # Get product reviews  
             product_reviews_section = data.find("div", attrs={"data-cy":"reviews-block"})
